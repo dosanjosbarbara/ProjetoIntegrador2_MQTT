@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>AirSense · Qualidade do Ar</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+:root {
+  --black:   #000000;
+  --surface: #0a0a0a;
+  --card:    #111111;
+  --border:  #1e1e1e;
+  --green:   #7fd3a2;
+  --green2:  #7fd3a2;
+  --green-dim:#00e67622;
+  --green-mid:#00e67644;
+  --white:   #ffffff;
+  --muted:   #666666;
+  --warn:    #ffab00;
+  --bad:     #ff1744;
+  --ext:     #40c4ff;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--black);
+  color: var(--white);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 32px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: #000000ee;
+  backdrop-filter: blur(16px);
+  z-index: 10;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo-mark {
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--green);
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: -1px;
+}
+
+.brand-text h1 {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -.3px;
+  color: var(--white);
+}
+
+.brand-text p {
+  font-size: 15px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.live-badge {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.pulse {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 0 var(--green);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 #00e67666; }
+  70%  { box-shadow: 0 0 0 8px #00e67600; }
+  100% { box-shadow: 0 0 0 0 #00e67600; }
+}
+
+.pulse.off { background: var(--bad); animation: none; box-shadow: none; }
+
+btn, button {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--white);
+  border-radius: 8px;
+  padding: 9px 16px;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+button:hover { border-color: var(--green); }
+.btn-primary {
+  border-color: var(--green);
+  color: var(--green);
+}
+.btn-primary:hover { background: var(--green-dim); }
+
+/* ── LAYOUT ── */
+main { max-width: 1480px; margin: 0 auto; padding: 32px; }
+
+/* ── CONNECT ── */
+.connect-bar {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-bottom: 36px;
+}
+
+input {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 15px;
+  background: var(--black);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--white);
+  padding: 10px 14px;
+  width: 100%;
+}
+input::placeholder { color: var(--muted); }
+input:focus { outline: none; border-color: var(--green); }
+
+/* ── STORY SECTIONS ── */
+.story-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+
+.story-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--white);
+  margin-bottom: 4px;
+  letter-spacing: -.4px;
+}
+
+.story-desc {
+  font-size: 15px;
+  color: var(--muted);
+  margin-bottom: 24px;
+  max-width: 560px;
+}
+
+/* ── HERO IoT ── */
+.hero-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  background: var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 36px;
+}
+
+.hero-metric {
+  background: var(--card);
+  padding: 28px 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-metric::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--green);
+}
+
+.hero-metric.warn-state::before { background: var(--warn); }
+.hero-metric.bad-state::before  { background: var(--bad); }
+
+.hero-label {
+  font-size: 15px;
+  color: var(--muted);
+  letter-spacing: .5px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hero-value {
+  font-family: 'Space Mono', monospace;
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: -2px;
+  line-height: 1;
+}
+
+.hero-metric.warn-state .hero-value { color: var(--warn); }
+.hero-metric.bad-state  .hero-value { color: var(--bad); }
+
+.hero-unit {
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 4px;
+  letter-spacing: 0;
+}
+
+.hero-sub {
+  font-size: 15px;
+  color: var(--muted);
+  margin-top: 10px;
+}
+
+.status-chip {
+  font-size: 15px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: var(--green-dim);
+  color: var(--green);
+  border: 1px solid var(--green-mid);
+}
+
+.status-chip.warn { background: #ffab0022; color: var(--warn); border-color: #ffab0044; }
+.status-chip.bad  { background: #ff174422; color: var(--bad);  border-color: #ff174444; }
+
+/* ── IOT PARTICLES DETAIL ── */
+.particles-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  background: var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 36px;
+}
+
+.part-card {
+  background: var(--card);
+  padding: 24px;
+}
+
+.part-label { font-size: 15px; color: var(--muted); margin-bottom: 8px; }
+
+.part-bar-wrap {
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  margin: 12px 0 6px;
+  overflow: hidden;
+}
+
+.part-bar {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--green);
+  transition: width .6s ease;
+}
+
+.part-bar.warn { background: var(--warn); }
+.part-bar.bad  { background: var(--bad); }
+
+.part-value {
+  font-family: 'Space Mono', monospace;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--green);
+}
+
+.part-value.warn { color: var(--warn); }
+.part-value.bad  { color: var(--bad); }
+
+.part-limit { font-size: 15px; color: var(--muted); margin-top: 4px; }
+
+/* ── DIVIDER ── */
+.section-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 40px 0 32px;
+}
+
+/* ── COMPARE CARDS ── */
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 36px;
+}
+
+.compare-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.compare-top {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.compare-name { font-weight: 600; font-size: 15px; }
+.ext-tag {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ext);
+  border: 1px solid #40c4ff44;
+  background: #40c4ff11;
+  border-radius: 20px;
+  padding: 3px 8px;
+  letter-spacing: .5px;
+}
+
+.compare-body { padding: 18px; }
+
+.compare-temp {
+  font-family: 'Space Mono', monospace;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--ext);
+  letter-spacing: -1px;
+  margin-bottom: 16px;
+}
+
+.cmp-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 15px;
+  color: var(--muted);
+}
+.cmp-row:last-child { border: 0; }
+.cmp-row strong { color: var(--white); font-weight: 600; }
+
+.delta-chip {
+  font-size: 15px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+  margin-left: 6px;
+}
+.delta-good { background: var(--green-dim); color: var(--green); }
+.delta-warn { background: #ffab0022; color: var(--warn); }
+.delta-bad  { background: #ff174422; color: var(--bad); }
+
+/* ── CHARTS ── */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.chart-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px;
+}
+
+.chart-label {
+  font-size: 15px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.chart-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.chart-wrap { height: 240px; position: relative; }
+
+/* ── CONNECT CONFIG ── */
+.conn-label {
+  font-size: 15px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+/* ── FOOTER ── */
+.foot {
+  text-align: center;
+  font-size: 15px;
+  color: var(--muted);
+  padding: 32px 0 16px;
+  border-top: 1px solid var(--border);
+  margin-top: 48px;
+}
+
+.timestamp-line {
+  font-family: 'Space Mono', monospace;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+/* ── EMPTY ── */
+.empty-state {
+  text-align: center;
+  color: var(--muted);
+  padding: 32px;
+  font-size: 15px;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1100px) {
+  .hero-grid { grid-template-columns: 1fr 1fr; }
+  .compare-grid { grid-template-columns: 1fr 1fr; }
+  .charts-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+  main { padding: 16px; }
+  header { padding: 16px; flex-wrap: wrap; gap: 10px; }
+  .hero-grid { grid-template-columns: 1fr 1fr; }
+  .hero-value { font-size: 36px; }
+  .connect-bar { grid-template-columns: 1fr; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .particles-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo-mark">AS</div>
+    <div class="brand-text">
+      <h1>AirSense</h1>
+      <p>Monitoramento ambiental · SENAI 134 · Ciência de Dados</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live-badge">
+      <span class="pulse off" id="statusDot"></span>
+      <span id="statusText">Desconectado</span>
+    </div>
+    <button onclick="refreshData()">↻ Atualizar</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- CONNECT -->
+  <div class="connect-bar">
+    <div>
+      <div class="conn-label">URL do projeto Supabase</div>
+      <input id="projectUrl" placeholder="https://xxxx.supabase.co" value="https://fbjfezoykihnqprdarwn.supabase.co">
+    </div>
+    <div>
+      <div class="conn-label">Chave pública (publishable)</div>
+      <input id="apiKey" placeholder="sb_publishable_…" value="sb_publishable_lIiumEWkDEx71ZL9C8Sjww_IguWieGm">
+    </div>
+    <div>
+      <div class="conn-label">Atualizar a cada (s)</div>
+      <input id="refreshRate" type="number" min="5" value="30" style="width:80px">
+    </div>
+    <button class="btn-primary" onclick="connect()">Conectar</button>
+  </div>
+
+  <!-- SECTION 1: IoT -->
+  <div class="story-label">SENSOR LOCAL · IOT</div>
+  <div class="story-title">O ar aqui, agora</div>
+  <div class="story-desc">Leitura em tempo real do sensor instalado no ambiente. Estes são os dados mais precisos — coletados diretamente no local monitorado.</div>
+
+  <div class="hero-grid">
+    <div class="hero-metric" id="card-temp">
+      <div class="hero-label">Temperatura <span class="status-chip" id="chip-temp">—</span></div>
+      <div class="hero-value" id="iotTemp">—<span class="hero-unit">°C</span></div>
+      <div class="hero-sub" id="iot-time">Última leitura: —</div>
+    </div>
+    <div class="hero-metric" id="card-hum">
+      <div class="hero-label">Umidade relativa <span class="status-chip" id="chip-hum">—</span></div>
+      <div class="hero-value" id="iotHum">—<span class="hero-unit">%</span></div>
+      <div class="hero-sub">Sensor local</div>
+    </div>
+    <div class="hero-metric" id="card-co2">
+      <div class="hero-label">CO₂ <span class="status-chip" id="chip-co2">—</span></div>
+      <div class="hero-value" id="iotCo2">—<span class="hero-unit">ppm</span></div>
+      <div class="hero-sub">Limite seguro: 1000 ppm</div>
+    </div>
+    <div class="hero-metric">
+      <div class="hero-label">Pressão atmosférica</div>
+      <div class="hero-value" id="iotPress">—<span class="hero-unit">hPa</span></div>
+      <div class="hero-sub">Sensor local</div>
+    </div>
+  </div>
+
+  <!-- PARTICLES -->
+  
+  <div class="story-title" style="margin-bottom:4px">Partículas no ar</div>
+  <div class="story-desc">Partículas finas são invisíveis mas afetam a saúde. PM2.5 penetra nos pulmões; PM10 irrita as vias aéreas.</div>
+
+  <div class="particles-row">
+    <div class="part-card">
+      <div class="part-label">PM2.5 · Partículas finas (≤ 2.5 µm)</div>
+      <div class="part-value" id="pm25-val">—<span style="font-size:15px;color:var(--muted)"> µg/m³</span></div>
+      <div class="part-bar-wrap"><div class="part-bar" id="pm25-bar" style="width:0%"></div></div>
+      <div class="part-limit">Limite OMS: 25 µg/m³ · <span id="pm25-status">—</span></div>
+    </div>
+    <div class="part-card">
+      <div class="part-label">PM10 · Partículas inaláveis (≤ 10 µm)</div>
+      <div class="part-value" id="pm10-val">—<span style="font-size:15px;color:var(--muted)"> µg/m³</span></div>
+      <div class="part-bar-wrap"><div class="part-bar" id="pm10-bar" style="width:0%"></div></div>
+      <div class="part-limit">Limite OMS: 50 µg/m³ · <span id="pm10-status">—</span></div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- SECTION 2: Comparação -->
+  <div class="story-label">REFERÊNCIA EXTERNA · API WAQI</div>
+  <div class="story-title">Como é o ar nas cidades vizinhas?</div>
+  <div class="story-desc">Dados de estações oficiais de monitoramento. Comparamos com o sensor local para entender se a qualidade do ar é um fenômeno pontual ou regional.</div>
+
+  <div class="compare-grid" id="compareGrid">
+    <div class="empty-state" style="grid-column:1/-1">Aguardando conexão…</div>
+  </div>
+
+  <!-- SECTION 3: Charts -->
+  <div class="story-label">COMPARAÇÃO VISUAL</div>
+  <div class="story-title">Lado a lado</div>
+  <div class="story-desc">Visualize as diferenças entre o sensor local e as estações externas de um só olhar.</div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-label">Temperatura por local</div>
+      <div class="chart-title">Está mais quente aqui ou lá fora?</div>
+      <div class="chart-wrap"><canvas id="tempChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-label">Umidade relativa por local</div>
+      <div class="chart-title">O ar está seco ou úmido?</div>
+      <div class="chart-wrap"><canvas id="humChart"></canvas></div>
+    </div>
+  </div>
+  <div class="charts-grid" style="margin-top:12px">
+    <div class="chart-card">
+      <div class="chart-label">PM2.5 nas estações externas · µg/m³</div>
+      <div class="chart-title">Partículas finas — onde é pior?</div>
+      <div class="chart-wrap"><canvas id="pm25Chart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-label">PM10 nas estações externas · µg/m³</div>
+      <div class="chart-title">Partículas inaláveis — onde é pior?</div>
+      <div class="chart-wrap"><canvas id="pm10Chart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="foot">
+    AirSense · SENAI 134 · Projeto Integrador · Ciência de Dados<br>
+    <span class="timestamp-line" id="lastRefresh">—</span>
+  </div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = (v, d=1) => {
+  if(v===null||v===undefined||v===''||isNaN(Number(v))) return '—';
+  const digits = (typeof d === 'number' && d >= 0 && d <= 20) ? d : 1;
+  return Number(v).toLocaleString('pt-BR', {maximumFractionDigits: digits});
+};
+const dateFmt = v => { if(!v) return '—'; let d=new Date(v); return isNaN(d)?v:d.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short',timeZone:'America/Sao_Paulo'}); };
+
+let timer = null;
+
+// Chart defaults
+Chart.defaults.color = '#666666';
+Chart.defaults.borderColor = '#1e1e1e';
+Chart.defaults.font.family = "'Space Grotesk', sans-serif";
+
+function chartOpts(yLabel='') {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: '#888', font:{size:11} }, grid: { color: '#1a1a1a' } },
+      y: { ticks: { color: '#888', font:{size:11} }, grid: { color: '#1a1a1a' }, title: { display: !!yLabel, text: yLabel, color: '#555', font:{size:10} } }
+    }
+  };
+}
+
+function makeBar(id, labels, values, colors) {
+  let ctx = $(id);
+  if(ctx._ch) ctx._ch.destroy();
+  ctx._ch = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data: values, backgroundColor: colors, borderRadius: 6, borderSkipped: false }]
+    },
+    options: chartOpts()
+  });
+}
+
+function statusChip(val, good, warn) {
+  if(val===null||val===undefined) return ['—',''];
+  if(val <= good) return ['Bom',''];
+  if(val <= warn) return ['Atenção','warn'];
+  return ['Crítico','bad'];
+}
+
+function co2State(val) {
+  if(!val) return '';
+  if(val < 800)  return '';
+  if(val < 1000) return 'warn-state';
+  return 'bad-state';
+}
+
+function humState(val) {
+  if(!val) return '';
+  if(val >= 40 && val <= 70) return '';
+  if(val >= 25 && val < 40)  return 'warn-state';
+  return 'bad-state';
+}
+
+function barPct(val, limit) {
+  if(!val) return 0;
+  return Math.min(100, (val/limit)*100);
+}
+
+function barClass(val, limit) {
+  if(!val) return '';
+  const r = val/limit;
+  if(r < 0.6) return '';
+  if(r < 1.0) return 'warn';
+  return 'bad';
+}
+
+function deltaChip(iotVal, extVal) {
+  if(iotVal===null||extVal===null) return '';
+  const d = Number(iotVal) - Number(extVal);
+  const sign = d > 0 ? '+' : '';
+  const cls = Math.abs(d) < 2 ? 'delta-good' : Math.abs(d) < 5 ? 'delta-warn' : 'delta-bad';
+  return `<span class="delta-chip ${cls}">${sign}${fmt(d)} vs local</span>`;
+}
+
+function populate(d) {
+  // ── IoT Hero ──
+  $('iotTemp').innerHTML = fmt(d.temperatura_iot) + '<span class="hero-unit">°C</span>';
+  $('iotHum').innerHTML  = fmt(d.umidade_iot)     + '<span class="hero-unit">%</span>';
+  $('iotCo2').innerHTML  = fmt(d.co2_iot,0)       + '<span class="hero-unit">ppm</span>';
+  $('iotPress').innerHTML= fmt(d.pressao_iot)     + '<span class="hero-unit">hPa</span>';
+  $('iot-time').textContent = 'Última leitura: ' + dateFmt(d.data_iot);
+
+  // chips
+  let [tLabel, tCls] = statusChip(d.temperatura_iot, 28, 33);
+  $('chip-temp').textContent = tLabel; $('chip-temp').className = 'status-chip ' + tCls;
+  let [hLabel, hCls] = statusChip(d.umidade_iot, 70, 90);
+  $('chip-hum').textContent = hLabel; $('chip-hum').className = 'status-chip ' + hCls;
+  let [cLabel, cCls] = statusChip(d.co2_iot, 800, 1000);
+  $('chip-co2').textContent = cLabel; $('chip-co2').className = 'status-chip ' + cCls;
+
+  // card states
+  $('card-co2').className = 'hero-metric ' + co2State(d.co2_iot);
+  $('card-hum').className = 'hero-metric ' + humState(d.umidade_iot);
+
+  // ── Particles ──
+  const p1 = d.particula1_iot, p2 = d.particula2_iot;
+  $('pm25-val').innerHTML = fmt(p1,1) + '<span style="font-size:15px;color:var(--muted)"> µg/m³</span>';
+  $('pm10-val').innerHTML = fmt(p2,1) + '<span style="font-size:15px;color:var(--muted)"> µg/m³</span>';
+  $('pm25-bar').style.width = barPct(p1,25)+'%';
+  $('pm10-bar').style.width = barPct(p2,50)+'%';
+  $('pm25-bar').className = 'part-bar ' + barClass(p1,25);
+  $('pm10-bar').className = 'part-bar ' + barClass(p2,50);
+  $('pm25-val').className = 'part-value ' + barClass(p1,25);
+  $('pm10-val').className = 'part-value ' + barClass(p2,50);
+  $('pm25-status').textContent = p1!==null ? (p1<=25?'✓ Dentro do limite':'⚠ Acima do limite') : '—';
+  $('pm10-status').textContent = p2!==null ? (p2<=50?'✓ Dentro do limite':'⚠ Acima do limite') : '—';
+
+  // ── Compare cards ──
+  const sites = [
+    { name:'São Bernardo do Campo', t:d.temperatura_sbc, h:d.umidade_sbc, c:d.co2_sbc, pm25:d.pm25_sbc, pm10:d.pm10_sbc, date:d.data_sbc },
+    { name:'Diadema',               t:d.temperatura_diadema, h:d.umidade_diadema, c:d.co2_diadema, pm25:d.pm25_diadema, pm10:d.pm10_diadema, date:d.data_diadema },
+    { name:'São Paulo · D. Pedro II', t:d.temperatura_parque, h:d.umidade_parque, c:d.co2_parque, pm25:d.pm25_parque, pm10:d.pm10_parque, date:d.data_parque },
+  ];
+
+  $('compareGrid').innerHTML = sites.map(s => `
+    <div class="compare-card">
+      <div class="compare-top">
+        <span class="compare-name">${s.name}</span>
+        <span class="ext-tag">WAQI</span>
+      </div>
+      <div class="compare-body">
+        <div class="compare-temp">${fmt(s.t)}<span style="font-size:15px;color:var(--muted);font-weight:400"> °C</span></div>
+        <div class="cmp-row"><span>Umidade</span><strong>${fmt(s.h)}%${deltaChip(d.umidade_iot,s.h)}</strong></div>
+        <div class="cmp-row"><span>PM2.5</span><strong>${fmt(s.pm25)} µg/m³</strong></div>
+        <div class="cmp-row"><span>PM10</span><strong>${fmt(s.pm10)} µg/m³</strong></div>
+        <div class="cmp-row"><span>Medido em</span><strong>${dateFmt(s.date)}</strong></div>
+      </div>
+    </div>
+  `).join('');
+
+  // ── Charts ──
+  const extLabels = ['São Bernardo','Diadema','D. Pedro II'];
+  const iotColor  = '#00e676';
+  const extColor  = '#40c4ff';
+  const warnColor = '#ffab00';
+
+  makeBar('tempChart',
+    ['IoT local', ...extLabels],
+    [d.temperatura_iot, d.temperatura_sbc, d.temperatura_diadema, d.temperatura_parque],
+    [iotColor, extColor, extColor, extColor]
+  );
+
+  makeBar('humChart',
+    ['IoT local', ...extLabels],
+    [d.umidade_iot, d.umidade_sbc, d.umidade_diadema, d.umidade_parque],
+    [iotColor, extColor, extColor, extColor]
+  );
+
+  makeBar('pm25Chart',
+    extLabels,
+    [d.pm25_sbc, d.pm25_diadema, d.pm25_parque],
+    [warnColor, warnColor, warnColor]
+  );
+
+  makeBar('pm10Chart',
+    extLabels,
+    [d.pm10_sbc, d.pm10_diadema, d.pm10_parque],
+    [warnColor, warnColor, warnColor]
+  );
+
+  $('lastRefresh').textContent = 'Atualizado em ' + new Date().toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});
+  $('statusDot').className = 'pulse';
+  $('statusText').textContent = 'Conectado';
+}
+
+async function refreshData() {
+  const url = $('projectUrl').value.trim().replace(/\/$/,'');
+  const key  = $('apiKey').value.trim();
+  if(!url||!key) { $('statusText').textContent='Configure a conexão'; return; }
+
+  $('statusText').textContent = 'Consultando…';
+  try {
+    const r = await fetch(`${url}/rest/v1/vw_comparacao_ambiental?select=*`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` }
+    });
+    if(!r.ok) throw new Error(`${r.status}: ${await r.text()}`);
+    const rows = await r.json();
+    if(!rows.length) throw new Error('View retornou zero linhas.');
+    populate(rows[0]);
+  } catch(e) {
+    $('statusDot').className = 'pulse off';
+    $('statusText').textContent = 'Falha: ' + e.message;
+    console.error(e);
+  }
+}
+
+function connect() {
+  if(timer) clearInterval(timer);
+  refreshData();
+  const s = Math.max(5, Number($('refreshRate').value) || 30);
+  timer = setInterval(refreshData, s * 1000);
+}
+
+// Auto-connect se campos preenchidos
+window.addEventListener('load', () => {
+  if($('projectUrl').value && $('apiKey').value) connect();
+});
+</script>
+</body>
+</html>
